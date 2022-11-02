@@ -37,7 +37,7 @@ bool file_names(FILE *file, uint8_t buffer) {
           }
           if (buffer == 0x02) {
             counter++;
-            fseek(file, 24, SEEK_CUR);                                      
+            fseek(file, 24, SEEK_CUR);    //смещаемся на 24 байта,для нахождения длины имени файла                                    
              if (fread(&filename_len, sizeof(uint16_t), 1, file) <= 0) {
               ERROR_READ;
             }        
