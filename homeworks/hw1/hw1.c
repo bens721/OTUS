@@ -3,10 +3,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define READ1B fread(&buffer, sizeof(uint8_t), 1, file)
-#define ERROR_READ                                                             \
-  printf("error to read file");                                                \
-  exit(1)
+#define READ1B \
+fread(&buffer, sizeof(uint8_t), 1, file)
+
+#define ERROR_READ\
+  printf("error to read file");\
+  fclose(file);\
+  exit(1)\
+
 
 
 bool file_names(FILE *file) {
@@ -32,7 +36,7 @@ bool file_names(FILE *file) {
             fseek(file, 24, SEEK_CUR); //смещаемся на 24 байта для определения
                                        //размера имени файла
             uint16_t filename_len;
-            if (fread(&filename_len, sizeof(uint16_t), 1, file) <= 0) {
+            if (fread(&filename_len, sizeof(uint16_t), 1, file) <= 0){
               ERROR_READ;
             }
             uint8_t filename[filename_len+1];
