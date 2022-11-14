@@ -47,11 +47,7 @@ bool file_names(FILE *file) {
             }
             counter++;
             printf("filename %lu: ", counter);
-            for (size_t i = 0; i < filename_len; i++) {   //Не пойму,почему если выводить через printf("%s",..),то выводится еще один непонятный символ.
-              //printf("%s",filename);
-              printf("%c",filename[i]);
-            }
-            printf("\n");
+            printf("%.*s\n",filename_len,filename);
           }
         }
       }
