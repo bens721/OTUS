@@ -96,12 +96,10 @@ bool encoding(char *table[], FILE *input, FILE *output) {
 }
 
 int main(int argc, char *argv[]) {
-
   if (argc < 2 || argc == 3 || argc > 4) {
     printf("Please use -h for help\n");
     exit(1);
   }
-
   int result, option_index = 0;
   const struct option long_options[] = {
       {"koi8", required_argument, 0, 'k'},
@@ -129,7 +127,6 @@ int main(int argc, char *argv[]) {
 
   if ((result = getopt_long(argc, argv, short_options, long_options,
                             &option_index)) != -1) {
-
     switch (result) {
 
     case 'k':
@@ -142,6 +139,7 @@ int main(int argc, char *argv[]) {
       fclose(input);
       fclose(output);
       break;
+            
     case 'c':
       if (strcmp(argv[1], "-c") != 0 && strcmp(argv[1], "--cp1251") != 0) {
         printf("Wrong option, please use -h for help\n");
@@ -152,6 +150,7 @@ int main(int argc, char *argv[]) {
       fclose(input);
       fclose(output);
       break;
+            
     case 'i':
       if (strcmp(argv[1], "-i") != 0 && strcmp(argv[1], "--iso8859_5") != 0) {
         printf("Wrong option, please use -h for help\n");
