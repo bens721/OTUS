@@ -1,4 +1,5 @@
 #include <getopt.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,8 +49,6 @@ char *cp1251[128] = {
 };
 
 char *iso8859_5[128] = {
-    //Если заполнять таблицу с control символами, то компилятор выдает ошибку,
-    //почему?
     "000000", "000000", "000000", "000000", "000000", "000000", "000000",
     "000000", "000000", "000000", "000000", "000000", "000000", "000000",
     "000000", "000000", "000000", "000000", "000000", "000000", "000000",
@@ -71,44 +70,38 @@ char *iso8859_5[128] = {
     "\u045e", "\u045f",
 };
 
-int search_index(uint8_t key) {    //поиск считанного байта и получение его индекса
-  uint8_t ascii[128];
-  for (int i = 0; i < 128; i++) {
-    ascii[i] = 0x80 + i;
-  }
-
-  for (int i = 0; i <= 128; i++) {
-    if (ascii[i] == key)
-      return i;
-  }
-  printf("Search_index error\n");
-  return 1;
-}
-
-void encoding(char *table[], FILE *input, FILE *output) {
+bool encoding(char *table[], FILE *input, FILE *output) {
   uint8_t buffer;
   fseek(input, 0, SEEK_SET);
   while (fread(&buffer, sizeof(uint8_t), 1, input) == 1) {
     if (buffer > 0x7F) {
-      int j = search_index(buffer);
-      if (fwrite((char *)table[j], sizeof(char), 2, output) == 0) { //запись символа из таблицы в файл с найденным индексом
+
+      if (fwrite((char *)table[buffer - 0x80], sizeof(uint8_t), 2, output) ==
+          0) {
         printf("File write error\n");
         exit(1);
       }
-    } else if (fwrite(&buffer, sizeof(char), 1, output) == 0) {
+    } else if (fwrite(&buffer, sizeof(uint8_t), 1, output) == 0) {
       printf("File write error\n");
       exit(1);
     }
   }
   if (feof(input)) {
     printf("File read done\n");
+    return true;
   } else {
     printf("File read error\n");
-    exit(1);
+    return false;
   }
 }
 
 int main(int argc, char *argv[]) {
+
+  if (argc < 2 || argc == 3 || argc > 4) {
+    printf("Please use -h for help\n");
+    exit(1);
+  }
+
   int result, option_index = 0;
   const struct option long_options[] = {
       {"koi8", required_argument, 0, 'k'},
@@ -119,6 +112,20 @@ int main(int argc, char *argv[]) {
   const char *short_options = "k:c:i:h";
   FILE *input = NULL;
   FILE *output = NULL;
+  if (argc == 4) {
+    input = fopen(argv[2], "rb");
+    if (!input) {
+      printf("File opening error\n");
+      fclose(input);
+      exit(1);
+    }
+    output = fopen(argv[3], "w");
+    if (!output) {
+      printf("File opening error\n");
+      fclose(output);
+      exit(1);
+    }
+  }
 
   if ((result = getopt_long(argc, argv, short_options, long_options,
                             &option_index)) != -1) {
@@ -126,69 +133,51 @@ int main(int argc, char *argv[]) {
     switch (result) {
 
     case 'k':
-      input = fopen(argv[2], "rb");
-      output = fopen(argv[3], "w");
-      if (!input) {
-        printf("File opening error\n");
-        free(input);
+      if (strcmp(argv[1], "-k") != 0 && strcmp(argv[1], "--koi8") != 0) {
+        printf("Wrong option, please use -h for help\n");
         exit(1);
       }
-      if (!output) {
-        printf("File opening error\n");
-        free(output);
-        exit(1);
-      }
-      printf("Done encoding KOI8 to UTF8\n");
-      encoding(koi8, input, output);
+      if (encoding(koi8, input, output))
+        printf("Done encoding KOI8 to UTF8\n");
       fclose(input);
       fclose(output);
       break;
     case 'c':
-      input = fopen(argv[2], "rb");
-      output = fopen(argv[3], "w");
-      if (!input) {
-        printf("File opening error\n");
-        free(input);
+      if (strcmp(argv[1], "-c") != 0 && strcmp(argv[1], "--cp1251") != 0) {
+        printf("Wrong option, please use -h for help\n");
         exit(1);
       }
-      if (!output) {
-        printf("File opening error\n");
-        free(output);
-        exit(1);
-      }
-      printf("Done encoding CP1251 to UTF8\n");
-      encoding(cp1251, input, output);
+      if (encoding(cp1251, input, output))
+        printf("Done encoding CP1251 to UTF8\n");
       fclose(input);
       fclose(output);
       break;
     case 'i':
-      input = fopen(argv[2], "rb");
-      output = fopen(argv[3], "w");
-      if (!input) {
-        printf("File opening error\n");
-        free(input);
+      if (strcmp(argv[1], "-i") != 0 && strcmp(argv[1], "--iso8859_5") != 0) {
+        printf("Wrong option, please use -h for help\n");
         exit(1);
       }
-      if (!output) {
-        printf("File opening error\n");
-        free(output);
-        exit(1);
-      }
-      printf("Done encoding ISO8859_5 to UTF8\n");
-      encoding(iso8859_5, input, output);
+      if (encoding(iso8859_5, input, output))
+        printf("Done encoding ISO8859_5 to UTF8\n");
       fclose(input);
       fclose(output);
       break;
+
     case 'h':
-      printf("Please use ./coder [Option] <input_filename> "
+      if (strcmp(argv[1], "-h") != 0 && strcmp(argv[1], "--help") != 0) {
+        printf("Wrong option, please use -h for help\n");
+        exit(1);
+      }
+
+      printf("Please use ./coder [OPTION] <input_filename> "
              "<output_filename>\n");
-      printf("-h,-help\n       coder help.\n");
-      printf("-k,\n      -koi8 dencoding.\n");
-      printf("-i,\n      -iso8859_5 dencoding.\n");
-      printf("-c,\n      -cp1251 dencoding.\n");
+      printf("-h,--help       -coder help.\n");
+      printf("-k,--koi8       -koi8 decoding.\n");
+      printf("-i,--iso8859_5  -iso8859_5 decoding.\n");
+      printf("-c,--cp1251     -cp1251 decoding.\n");
       break;
     case '?':
-      printf("Illegal option, please use ./coder -h or --help\n");
+      printf("Illegal option, please use -h for help\n");
       break;
     }
   } else
